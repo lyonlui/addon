@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         东南大学讲座预约插件
 // @namespace    https://github.com/lyonlui
-// @version      1.0
+// @version      1.01
 // @description  东南大学讲座自动预约插件
 // @author       Robbie
 // @match        http://*/*
@@ -9,7 +9,7 @@
 // @grant        none
 // ==/UserScript==
 // @run-at document-end
-
+// @updateURL    https://raw.githubusercontent.com/lyonlui/addon/main/addon.js
 
 var myInterval;                                 //预约间隔执行器
 var countInterval;                              //倒计时 间隔执行器
