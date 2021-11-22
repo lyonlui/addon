@@ -178,7 +178,7 @@ function displayAppointment(){
 
         var listJsonObj = JSON.parse(list);
         console.log('显示可预约的讲座');
-        pupopTip('1000px','240px','请勿过早预约，提前10分钟即可！<br>请仔细确认讲座的地点! 避免无法参加',listJsonObj);
+        pupopTip('1000px','480px','请勿过早预约，提前10分钟即可！<br>请仔细确认讲座的地点! 避免无法参加',listJsonObj);
     }
 
 
@@ -499,7 +499,7 @@ function autoAppointment(listJsonObj){
         }
     }
     xmlhttp.open("POST",jzxx,true);
-    xmlhttp.send("pageNumber=1&pageSize=12");
+    xmlhttp.send("pageNumber=1&pageSize=24");
 
 })();
 
