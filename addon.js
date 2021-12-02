@@ -84,6 +84,10 @@ function Reserve(WID,vcode) {
                 getVerificationCode(WID);
                 return;
             }
+           if(responseJson.msg.indexOf("尚未开放预约") != -1){       //尚未开放预约
+                getVerificationCode(WID);
+                return;
+            }
         }
 
     }
