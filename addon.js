@@ -79,7 +79,7 @@ function Reserve(WID,vcode) {
                 return;
             }
             if(responseJson.msg.indexOf("尚未开放预约") != -1){       //尚未开放预约
-                wait(3000);
+                wait(5000);
                 getCaptcha(WID);
                 return;
             }
@@ -128,9 +128,11 @@ function getCaptcha(WID){
             console.log(xmlhttp.responseText);
 
             var responseJson = JSON.parse(xmlhttp.responseText);
-            if(responseJson.datas.indexOf("image/jpeg")!=-1){
 
-                breakCaptcha(responseJson.datas.split(",")[1], WID)
+            if(responseJson.success){                                   //预约成功
+                console.log(responseJson.code);
+                if(responseJson.result != null)
+                    breakCaptcha(responseJson.result.split(",")[1], WID)
             }
 
         }
