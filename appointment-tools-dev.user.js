@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         东南大学讲座预约插件
 // @namespace    https://github.com/lyonlui
-// @version      2.11
+// @version      2.12
 // @description  东南大学讲座自动预约插件
 // @author       Robbie
 // @match        http://*/*
@@ -25,6 +25,7 @@ var jzxx = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/modules/hdyy/hdxxxs.do";
 var queryActivityListUrl = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/hdyy/queryActivityList.do?_="; //（新）获取所有讲座信息url
 var vrCode = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/hdyy/vcode.do?_=";
 
+//加载点赞请求
 
 /*
 Reserve 函数：
