@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         东南大学讲座预约插件
 // @namespace    https://github.com/lyonlui
-// @version      2.00
+// @version      2.11
 // @description  东南大学讲座自动预约插件
 // @author       Robbie
 // @match        http://*/*
