@@ -22,6 +22,7 @@ var localStorage = window.localStorage;         //本地存储
 
 var jzyyUrl = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/hdyy/yySave.do";         //讲座预约url
 var jzxx = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/modules/hdyy/hdxxxs.do";    //获取所有讲座信息url
+var queryActivityListUrl = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/hdyy/queryActivityList.do?_="; //（新）获取所有讲座信息url
 var vrCode = "http://ehall.seu.edu.cn/gsapp/sys/jzxxtjapp/hdyy/vcode.do?_=";
 
 
@@ -79,7 +80,7 @@ function Reserve(WID,vcode) {
                 return;
             }
             if(responseJson.msg.indexOf("尚未开放预约") != -1){       //尚未开放预约
-                wait(5000);
+                wait(1000);
                 getCaptcha(WID);
                 return;
             }
@@ -128,14 +129,15 @@ function getCaptcha(WID){
             console.log(xmlhttp.responseText);
 
             var responseJson = JSON.parse(xmlhttp.responseText);
-
-            if(responseJson.success){                                   //预约成功
+            if(responseJson.success){                                   //获取验证码成功
                 console.log(responseJson.code);
                 if(responseJson.result != null)
-                    breakCaptcha(responseJson.result.split(",")[1], WID)
+                    breakCaptcha(responseJson.result.split(",")[1], WID);
+            }else{
+                getCaptcha(WID);
             }
-
         }
+        return;
 
     }
 
@@ -152,6 +154,8 @@ function getCaptcha(WID){
 
 
 var jdApiUrl = "https://aiapi.jd.com/jianjiao/yzm?pri_id=ne&number=4&appkey="+appkey+"&timestamp="
+
+var firstAppointment = true;
 
 function breakCaptcha(datas,WID){
     var currentDate = new Date();
@@ -177,7 +181,14 @@ function breakCaptcha(datas,WID){
                 console.log(responseJson.result.msg);
 
                 if(responseJson.result.msg.indexOf("查询成功") != -1){
-                    Reserve(WID,responseJson.result.v_code)
+                    if(firstAppointment){                               //第一次预约，等5s
+                        console.log("第一次预约，获取验证码之后等5s");
+                        firstAppointment = false;
+                        wait(5000);
+                        Reserve(WID,responseJson.result.v_code);
+                    }else{
+                        Reserve(WID,responseJson.result.v_code);
+                    }
                     return;
                 }else if(responseJson.result.msg.indexOf("验证错误") != -1){
                     getCaptcha(WID);
@@ -199,7 +210,7 @@ timeOut 函数：
     * */
 function timeOut(WID){
 
-    console.log("开始抢讲座");
+    console.log("开始抢讲座，提前五秒获取验证码");
 
     getCaptcha(WID);
     //设置弹窗显示信息
@@ -447,7 +458,7 @@ function autoAppointment(listJsonObj){
         if(yes){
             console.log("开始自动预约");
             console.log('需要预约的 ' + WID);
-            setTimeout(timeOut,yykssjUnixTime-currentUnixTime+500, WID);      //设置预约开始时间提前10s开始抢讲座
+            setTimeout(timeOut,yykssjUnixTime-currentUnixTime-5000, WID);      //设置预约开始时间提前5s获取验证码
             //setTimeout(timeOut,3000, WID);
 
             var mindDiv = document.createElement("div");
@@ -497,6 +508,7 @@ function autoAppointment(listJsonObj){
                 console.log("取消预约");
 
                 clearInterval(countInterval);
+
                 $('.pupopBox').fadeOut(500,function () {$(this).remove()})
             };
 
@@ -507,29 +519,97 @@ function autoAppointment(listJsonObj){
     }
 }
 
-//油猴主函数
-(function() {
-    'use strict';
-    // 代码从这开始执行...
+function queryActivityList(){
+    var xmlhttp;
 
-    var domain = document.domain;
-
-
-    if(domain != "ehall.seu.edu.cn"){
-        console.log("不是东南综合大厅域名");
-        return;
+    if (window.XMLHttpRequest)
+    {// code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp=new XMLHttpRequest();
+    }
+    else
+    {// code for IE6, IE5
+        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
     }
 
-    var url = self.location.href;
-    if(url.indexOf("gsapp/sys/jzxxtjapp") == -1){
-        console.log("不是预约界面");
-        return;
+
+    xmlhttp.onreadystatechange=function()//获取所有讲座信息
+    {
+        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+        {
+
+            var responseJson = JSON.parse(xmlhttp.responseText);
+            console.log(responseJson.total);
+
+            var totalSize = 0;
+            var listJsonObj;
+            var datas = new Array();
+
+            for (var i=0;i<responseJson.total;i++)
+            {
+                console.log(responseJson.datas[i]);
+                var currentDate = new Date();
+                var currentUnixTime = currentDate.getTime();
+                var yyjssj = new Date(responseJson.datas[i].YYJSSJ.replace(/-/g, '/'));
+                var yyjssjUnixTime = yyjssj.getTime();
+
+                if(responseJson.datas[i].YYRS == responseJson.datas[i].HDZRS){//排除预约人数已满
+                    console.log("预约人数已满");
+                    continue;
+                }
+
+                if((yyjssjUnixTime-currentUnixTime)<0){//排除已过预约时间
+                    console.log("预约时间已过");
+                    continue;
+                }
+
+                if(responseJson.datas[i].YY_WID != null){//排除已经预约过的
+                    console.log("已经预约");
+                    continue;
+                }
+
+                var list = localStorage.getItem("appointment");
+
+                //存储有效讲座信息
+                if(list == null){
+                    datas.push(responseJson.datas[i]);
+                    totalSize = 1;
+                    list = {
+                        totalSize:totalSize,
+                        datas:datas,
+                    };
+                    listJsonObj = JSON.stringify(list);
+                    localStorage.setItem("appointment",listJsonObj);
+                }else{
+                    listJsonObj = JSON.parse(list);
+                    datas = listJsonObj.datas;
+                    totalSize = listJsonObj.totalSize;
+                    datas.push(responseJson.datas[i]);
+                    totalSize +=1;
+                    datas = listJsonObj.datas;
+                    list = {
+                        totalSize:totalSize,
+                        datas:datas,
+                    };
+                    listJsonObj = JSON.stringify(list);
+                    localStorage.setItem("appointment",listJsonObj);
+                }
+
+            }
+
+            displayAppointment();//显示弹窗
+
+
+        }
     }
+    var currentDate = new Date();
+    var currentUnixTime = currentDate.getTime();
+    var queryUrl = queryActivityListUrl + currentUnixTime;
+    xmlhttp.open("POST",queryUrl,true);
+    xmlhttp.send("&pageIndex=1&pageSize=30&sortField=&sortOrder=");
 
-    console.log(url);
+}
 
-    localStorage.removeItem("appointment"); //清理本地存储记录
-
+function oldQueryAPI(){
     var xmlhttp;
     if (window.XMLHttpRequest)
     {// code for IE7+, Firefox, Chrome, Opera, Safari
@@ -611,5 +691,32 @@ function autoAppointment(listJsonObj){
     }
     xmlhttp.open("POST",jzxx,true);
     xmlhttp.send("pageNumber=1&pageSize=24");
+
+}
+
+//油猴主函数
+(function() {
+    'use strict';
+    // 代码从这开始执行...
+
+    var domain = document.domain;
+
+
+    if(domain != "ehall.seu.edu.cn"){
+        console.log("不是东南综合大厅域名");
+        return;
+    }
+
+    var url = self.location.href;
+    if(url.indexOf("gsapp/sys/jzxxtjapp") == -1){
+        console.log("不是预约界面");
+        return;
+    }
+
+    console.log(url);
+
+    localStorage.removeItem("appointment"); //清理本地存储记录
+
+    queryActivityList();
 
 })();
